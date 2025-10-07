@@ -1,0 +1,9 @@
+{
+  "ticker": "AAPL",
+  "modules_enabled": {
+    "pattern": true,
+    "trend": true,
+    "mean_reversion": true,
+    "sentiment": true
+  }
+}
