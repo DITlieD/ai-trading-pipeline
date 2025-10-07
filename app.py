@@ -20,7 +20,8 @@ st.title("📈 AI Trading Pipeline Dashboard")
 # =========================
 API_KEY = os.getenv("ALPACA_API_KEY")
 API_SECRET = os.getenv("ALPACA_API_SECRET")
-trading_client = TradingClient(API_KEY, API_SECRET, paper=True)
+USE_PAPER = True  # Always use paper trading for safety
+trading_client = TradingClient(API_KEY, API_SECRET, paper=USE_PAPER)
 
 # =========================
 # Sidebar Controls
@@ -37,11 +38,11 @@ tickers = [t.strip().upper() for t in tickers_input.split(",")][:3]
 period = st.sidebar.selectbox("Data Period", ["1mo", "3mo", "6mo", "1y"], index=2)
 interval = st.sidebar.selectbox("Data Interval", ["1d", "1h", "30m"], index=0)
 
-# Action
+# Action selection
 action = st.sidebar.radio("Action", ["Train Model", "Predict & Trade"])
 
 # =========================
-# Top 10 tickers by volume (free Yahoo Finance)
+# Top 10 tickers by volume (static for now)
 # =========================
 st.sidebar.subheader("💎 Top 10 Tickers (by volume)")
 top10 = ["AAPL","MSFT","TSLA","NVDA","AMZN","GOOGL","META","SPY","QQQ","JPM"]
@@ -54,33 +55,36 @@ st.sidebar.subheader("📋 Watchlist")
 watchlist = st.sidebar.multiselect("Select tickers to watch", top10, default=tickers)
 
 # =========================
-# Main display for each ticker
+# Main display + Start button
 # =========================
-for ticker in watchlist:
-    st.header(f"Ticker: {ticker}")
+st.header("Watchlist Actions")
 
-    # Fetch + clean data
-    df = fetch_data(ticker, period=period, interval=interval)
-    df = add_features(df)
+if st.button("Start"):
+    for ticker in watchlist:
+        st.subheader(f"Ticker: {ticker}")
 
-    st.subheader("📊 Data Preview")
-    st.dataframe(df.tail())
+        # Fetch + clean data
+        df = fetch_data(ticker, period=period, interval=interval)
+        df = add_features(df)
 
-    st.subheader("📈 Indicators")
-    st.line_chart(df[["RSI", "MACD", "Signal"]])  # <- fixed line
+        st.subheader("📊 Data Preview")
+        st.dataframe(df.tail())
 
-    # Action buttons for each ticker
-    if action == "Train Model":
-        train_model(df)
-        st.success(f"✅ Model trained and saved for {ticker}")
+        st.subheader("📈 Indicators")
+        st.line_chart(df[["RSI", "MACD", "Signal"]])
 
-    elif action == "Predict & Trade":
-        try:
-            load_model()
-            predict_and_trade(ticker)
-            st.success(f"✅ Prediction + order executed for {ticker}")
-        except Exception as e:
-            st.error(f"❌ Error: {e}")
+        # Execute selected action
+        if action == "Train Model":
+            train_model(df)
+            st.success(f"✅ Model trained and saved for {ticker}")
+
+        elif action == "Predict & Trade":
+            try:
+                load_model()
+                predict_and_trade(ticker)
+                st.success(f"✅ Prediction + order executed for {ticker}")
+            except Exception as e:
+                st.error(f"❌ Error: {e}")
 
 # =========================
 # Last 5 Alpaca Paper Trades
